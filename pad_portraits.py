@@ -30,12 +30,19 @@ SUPPORTED_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
 
 
 def iter_images(folder: Path) -> Iterable[Path]:
-    """Yield image file paths inside *folder* with recognised extensions."""
-    yield from (
-        p
-        for p in folder.iterdir()
-        if p.is_file() and p.suffix.lower() in SUPPORTED_SUFFIXES
-    )
+    """
+    Recursively yield image files inside *folder* whose extension is supported.
+
+    Files that already live inside a directory named ``padded`` are skipped to
+    avoid re-processing previous outputs.
+    """
+    for p in folder.rglob("*"):
+        if (
+            p.is_file()
+            and p.suffix.lower() in SUPPORTED_SUFFIXES
+            and "padded" not in p.parts
+        ):
+            yield p
 
 
 def find_target_aspect(img_paths: Iterable[Path]) -> float:
@@ -54,17 +61,19 @@ def find_target_aspect(img_paths: Iterable[Path]) -> float:
     )
 
 
-def pad_portrait(src: Path, ratio: float, out_dir: Path) -> None:
+def pad_portrait(src: Path, ratio: float, dest: Path) -> None:
     """
-    Add side padding to *src* so it matches *ratio* and save the result to *out_dir*.
-    Landscape images are copied unchanged.  Portraits get black bars.
+    Write *src* to *dest* so the result matches the supplied aspect *ratio*.
+
+    • Portrait images receive black bars left/right.  
+    • Landscape images are copied unchanged.
     """
     with Image.open(src) as im:
         w, h = im.size
 
         # Landscape – copy as-is
         if w >= h:
-            im.save(out_dir / src.name)
+            im.save(dest)
             return
 
         # Portrait – build a new canvas
@@ -81,7 +90,7 @@ def pad_portrait(src: Path, ratio: float, out_dir: Path) -> None:
         if im.mode == "RGBA":
             new_im = new_im.convert("RGBA")
 
-        new_im.save(out_dir / src.name)
+        new_im.save(dest)
 
 
 def main() -> None:
@@ -109,7 +118,9 @@ def main() -> None:
     out_dir.mkdir(exist_ok=True)
 
     for img_path in images:
-        pad_portrait(img_path, ratio, out_dir)
+        dest_path = out_dir / img_path.relative_to(folder)
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        pad_portrait(img_path, ratio, dest_path)
 
     print(f"Finished. Results saved to: {out_dir}")
 
