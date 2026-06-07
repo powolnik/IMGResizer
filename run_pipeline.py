@@ -47,13 +47,9 @@ def main() -> None:
     args = parser.parse_args()
 
     # ---------------------------------------------------------------
-    # 1. rename_whatsapp.py
+    # 1. rename_whatsapp.py (dry-run mode to preserve originals in img)
     # ---------------------------------------------------------------
-    ren_cmd = [sys.executable, str(ROOT / "rename_whatsapp.py")]
-    if args.dry_rename:
-        ren_cmd.append("-n")
-    if args.force_rename:
-        ren_cmd.append("-f")
+    ren_cmd = [sys.executable, str(ROOT / "rename_whatsapp.py"), "-n"]
     run(ren_cmd)
 
     # ---------------------------------------------------------------
