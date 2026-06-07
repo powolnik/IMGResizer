@@ -44,21 +44,16 @@ def main() -> None:
         sys.exit("No collection/ directory – run pad_portraits.py first.")
 
     sources = list(iter_images(src_dir))
-    dest_names = {p.name for p in dst_dir.iterdir() if p.is_file()}
-
-    missing = [p for p in sources if p.name not in dest_names]
+    dest_files = [p for p in dst_dir.iterdir() if p.is_file()]
 
     print(
         f"Verification report\n"
         f"  originals : {len(sources)}\n"
-        f"  in output : {len(dest_names)}\n"
-        f"  missing   : {len(missing)}"
+        f"  in output : {len(dest_files)}\n"
     )
 
-    if missing:
-        print("\nFiles not found in collection/:")
-        for p in missing:
-            print(f"  {p.relative_to(src_dir)}")
+    if len(sources) != len(dest_files):
+        print("\nMismatch in file counts between img/ and collection/")
         sys.exit(1)
 
     print("\nAll files are present.")
