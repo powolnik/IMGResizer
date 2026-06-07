@@ -71,21 +71,35 @@ def _deduplicated_path(path: Path) -> Path:
     return candidate
 
 
-def rename_file(path: Path, new_path: Path, *, dry_run: bool, force: bool) -> None:
+def rename_file(
+    path: Path,
+    new_path: Path,
+    *,
+    dry_run: bool,
+    force: bool,
+) -> bool:
+    """
+    Rename *path* to *new_path*.
+
+    Returns True if a rename (or dry-run rename) was performed, False when the
+    destination already exists and --force was not supplied.
+    """
     exists = new_path.exists()
 
-    # Automatically resolve name clashes unless --force was supplied
+    # Skip when destination already exists unless --force is supplied
     if exists and not force:
-        new_path = _deduplicated_path(new_path)
+        print(f"SKIP   (exists) {path.name} → {new_path.name}")
+        return False
 
     if dry_run:
         print(f"DRYRUN        {path.name} → {new_path.name}")
-        return
+        return True
 
     if exists and force:
         new_path.unlink()  # replace existing file
     path.rename(new_path)
     print(f"RENAME        {path.name} → {new_path.name}")
+    return True
 
 
 def main() -> None:
@@ -121,8 +135,15 @@ def main() -> None:
             skipped += 1
             continue
 
-        rename_file(path, path.with_name(new_name), dry_run=args.dry_run, force=args.force)
-        renamed += 1
+        if rename_file(
+            path,
+            path.with_name(new_name),
+            dry_run=args.dry_run,
+            force=args.force,
+        ):
+            renamed += 1
+        else:
+            skipped += 1
 
     print(
         f"\nDone. Renamed: {renamed}, left unchanged (non-WhatsApp): {skipped}"
