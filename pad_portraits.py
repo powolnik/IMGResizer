@@ -22,6 +22,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Iterable
+import shutil
 
 from PIL import Image
 
@@ -41,6 +42,7 @@ def iter_images(folder: Path) -> Iterable[Path]:
             p.is_file()
             and p.suffix.lower() in SUPPORTED_SUFFIXES
             and "padded" not in p.parts
+            and "collection" not in p.parts
         ):
             yield p
 
@@ -94,18 +96,21 @@ def pad_portrait(src: Path, ratio: float, dest: Path) -> None:
 
 
 def main() -> None:
-    # Accept zero or one positional argument.  No argument → current directory.
-    if len(sys.argv) > 2:
-        print("Usage: python pad_portraits.py [folder_with_images]")
+    # ------------------------------------------------------------------
+    # Script now uses fixed locations:
+    #   • Input images:      <project-root>/img/
+    #   • Output collection: <project-root>/collection/
+    # ------------------------------------------------------------------
+    if len(sys.argv) > 1:
+        print("Usage: python pad_portraits.py")
         sys.exit(1)
 
-    folder = (
-        Path(sys.argv[1]).expanduser().resolve()
-        if len(sys.argv) == 2
-        else Path.cwd()
-    )
+    project_root = Path(__file__).resolve().parent
+    folder = project_root / "img"
+    out_dir = project_root / "collection"
+
     if not folder.is_dir():
-        sys.exit(f"Error: {folder} is not a directory")
+        sys.exit(f"Error: expected input folder {folder} to exist")
 
     images = list(iter_images(folder))
     if not images:
@@ -114,12 +119,13 @@ def main() -> None:
     ratio = find_target_aspect(images)
     print(f"Target aspect ratio: {ratio:.3f}")
 
-    out_dir = folder / "padded"
-    out_dir.mkdir(exist_ok=True)
+    # Fresh output directory every run
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     for img_path in images:
-        dest_path = out_dir / img_path.relative_to(folder)
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        dest_path = out_dir / img_path.name
         pad_portrait(img_path, ratio, dest_path)
 
     print(f"Finished. Results saved to: {out_dir}")
