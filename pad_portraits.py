@@ -224,7 +224,19 @@ def main() -> None:
         dest_path = out_dir / new_name
         pad_portrait(img_path, ratio, dest_path)
 
-    print(f"Finished. Results saved to: {out_dir}")
+    # ------------------------------------------------------------------
+    # Final report: aspect-ratio distribution for the new collection.
+    # ------------------------------------------------------------------
+    ratios: Counter[float] = Counter()
+    for p in out_dir.iterdir():
+        with Image.open(p) as im:
+            w, h = im.size
+            ratios[round(w / h, 3)] += 1
+
+    print(f"\nFinished. Results saved to: {out_dir}\n")
+    print("Aspect-ratio distribution in collection/:")
+    for r, cnt in ratios.most_common():
+        print(f"  {r:.3f} : {cnt}")
 
 
 if __name__ == "__main__":
