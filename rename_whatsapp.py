@@ -34,10 +34,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# Matches the default WhatsApp export naming pattern
+# Accept optional trailing junk (letters, spaces, symbols) after the seconds
+# so names like "...20.42.37mbj.jpeg" are still recognised.
 _PATTERN = re.compile(
     r"^whatsapp image (\d{4})-(\d{2})-(\d{2}) at "
-    r"(\d{2})\.(\d{2})\.(\d{2})",
+    r"(\d{2})\.(\d{2})\.(\d{2})(?:\D.*)?$",
     re.IGNORECASE,
 )
 
