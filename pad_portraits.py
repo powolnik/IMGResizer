@@ -99,12 +99,11 @@ def most_common_aspect(
     return counts.most_common(1)[0][0]
 
 
-def pad_portrait(src: Path, ratio: float, dest: Path) -> None:
+def pad_portrait(src: Path, dest: Path) -> None:
     """
     Write *src* to *dest* so that the final image fits within a 1024x768 (4:3) frame.
     If the source image has a resolution greater than 1024x768, it is downscaled;
     otherwise, it is centered without upscaling. A black background is used for padding.
-    The 'ratio' parameter is ignored since the target ratio is fixed to 4:3.
     """
     target_w, target_h = 1024, 768
     with Image.open(src) as im:
@@ -141,12 +140,6 @@ def main() -> None:
         )
     )
     parser.add_argument(
-        "-r",
-        "--ratio",
-        type=float,
-        help="Override the detected target aspect-ratio (implies --yes).",
-    )
-    parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
@@ -173,38 +166,8 @@ def main() -> None:
     if not images:
         sys.exit("No supported images found in the specified folder.")
 
-    detected_ratio = most_common_aspect(images)
-
-    # -------------------- analysis report -----------------------------
-    n_landscape = 0
-    for p in images:
-        with Image.open(p) as im:
-            if im.size[0] >= im.size[1]:
-                n_landscape += 1
-    n_portrait = len(images) - n_landscape
-
-    print(
-        "Analysis:\n"
-        f"  total files   : {len(images)}\n"
-        f"  landscape     : {n_landscape}\n"
-        f"  portrait      : {n_portrait}\n"
-        f"  target ratio  : {detected_ratio:.3f}"
-    )
-
-    # Decide which ratio to use
-    ratio = args.ratio if args.ratio is not None else detected_ratio
 
     if not non_interactive:
-        custom = input(
-            f"\nEnter aspect ratio to use "
-            f"[press Enter to accept {ratio:.3f}]: "
-        ).strip()
-        if custom:
-            try:
-                ratio = float(custom)
-            except ValueError:
-                print("Invalid number – keeping previous value.")
-
         confirm = input("Proceed with padding? [y/N] ").strip().lower()
         if confirm != "y":
             print("Aborted by user.")
@@ -221,7 +184,7 @@ def main() -> None:
         date_str = date_for_file(img_path)
         new_name = f"{idx:04d}-{date_str}{img_path.suffix.lower()}"
         dest_path = out_dir / new_name
-        pad_portrait(img_path, ratio, dest_path)
+        pad_portrait(img_path, dest_path)
 
     # ------------------------------------------------------------------
     # Final report: aspect-ratio distribution for the new collection.
