@@ -57,18 +57,33 @@ def desired_name(stem: str, suffix: str) -> str | None:
     return ts.strftime("%Y-%m-%d_%H-%M-%S") + suffix.lower()
 
 
+def _deduplicated_path(path: Path) -> Path:
+    """
+    Return a variant of *path* that does not clash with an existing file
+    by appending '_1', '_2', … before the extension.
+    """
+    stem, suffix = path.stem, path.suffix.lower()
+    counter = 1
+    candidate = path
+    while candidate.exists():
+        candidate = path.with_name(f"{stem}_{counter}{suffix}")
+        counter += 1
+    return candidate
+
+
 def rename_file(path: Path, new_path: Path, *, dry_run: bool, force: bool) -> None:
     exists = new_path.exists()
+
+    # Automatically resolve name clashes unless --force was supplied
     if exists and not force:
-        print(f"SKIP   (exists) {path.name} → {new_path.name}")
-        return
+        new_path = _deduplicated_path(new_path)
 
     if dry_run:
         print(f"DRYRUN        {path.name} → {new_path.name}")
         return
 
-    if exists:  # and force is True
-        new_path.unlink()
+    if exists and force:
+        new_path.unlink()  # replace existing file
     path.rename(new_path)
     print(f"RENAME        {path.name} → {new_path.name}")
 
