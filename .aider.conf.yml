@@ -1,0 +1,94 @@
+######################
+#### Models:
+
+# ## Best :
+model: openrouter/openai/o3-mini
+editor-model: openrouter/openai/gpt-4.1-mini
+weak-model: openrouter/openai/gpt-4.1-nano
+
+
+
+chat-language: pl
+
+architect: false
+auto-accept-architect: false
+watch-files: true
+
+model-settings-file: .aider.model.settings.yml
+model-metadata-file: .aider.model.metadata.json
+
+# reasoning-effort: xxx
+# thinking-tokens: xxx
+# max-chat-history-tokens: xxx
+show-model-warnings: true
+auto-lint: true
+auto-test: false
+
+auto-commits: true
+dirty-commits: true
+attribute-author: false
+attribute-committer: false
+attribute-commit-message-author: false
+attribute-commit-message-committer: false
+attribute-co-authored-by: false
+git-commit-verify: false
+
+detect-urls: true
+multiline: false
+fancy-input: true
+yes-always: true
+
+## specify a file to edit (can be used multiple times)
+#file: xxx
+## Specify multiple values like this:
+#file:
+#  - xxx
+#  - yyy
+#  - zzz
+
+## specify a read-only file (can be used multiple times)
+#read: xxx
+## Specify multiple values like this:
+#read:
+#  - xxx
+#  - yyy
+#  - zzz
+
+######################
+### Modes:
+
+#message: xxx                   ## Specify a single message to send the LLM, 
+                                  # process reply then exit (disables chat mode)
+#message-file: xxx              ## Specify a file containing the message to send the LLM, 
+                                  # process reply, then exit (disables chat mode)
+#gui: false                     ## Run aider in your browser (default: False)
+#copy-paste: false              ## Enable automatic copy/paste of chat between aider and web UI (default: False)
+#apply: xxx                     ## Apply the changes from the given file instead of running the chat (debug)
+#apply-clipboard-edits: false   ## Apply clipboard contents as edits using the main model's editor format
+#exit: false                    ## Do all startup activities then exit before accepting user input (debug)
+#show-repo-map: false           ## Print the repo map and exit (debug)
+#show-prompts: false            ## Print the system prompts and exit (debug)
+
+######################
+### Cache settings:
+# cache-prompts: false
+
+######################
+### Repomap settings:
+# map-tokens: xxx
+# map-refresh: auto
+
+######################
+### Output settings:
+dark-mode: true
+pretty: true
+stream: true
+code-theme: one-dark-pro
+
+######################
+### Git settings:
+# git: true
+# gitignore: true
+# add-gitignore-files: false
+# aiderignore: .aiderignore
+# subtree-only: false
