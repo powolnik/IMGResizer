@@ -101,34 +101,33 @@ def most_common_aspect(
 
 def pad_portrait(src: Path, ratio: float, dest: Path) -> None:
     """
-    Write *src* to *dest* so the result matches the supplied aspect *ratio*.
-
-    • Portrait images receive black bars left/right.  
-    • Landscape images are copied unchanged.
+    Write *src* to *dest* so that the final image fits within a 1024x768 (4:3) frame.
+    If the source image has a resolution greater than 1024x768, it is downscaled;
+    otherwise, it is centered without upscaling. A black background is used for padding.
+    The 'ratio' parameter is ignored since the target ratio is fixed to 4:3.
     """
+    target_w, target_h = 1024, 768
     with Image.open(src) as im:
         w, h = im.size
 
-        # Landscape – copy as-is
-        if w >= h:
-            im.save(dest)
-            return
+        # Determine scaling factor (only downscale, do not upscale)
+        scale_factor = min(1, target_w / w, target_h / h)
+        new_w = int(w * scale_factor)
+        new_h = int(h * scale_factor)
+        resized_im = im.resize((new_w, new_h), Image.ANTIALIAS)
 
-        # Portrait – build a new canvas
-        new_w = int(round(h * ratio))
-        pad_left = (new_w - w) // 2
-
-        # Use an RGB black background regardless of original mode
-        background = (0, 0, 0)
+        # Create a new canvas with target dimensions and black background
         canvas_mode = "RGB" if im.mode in ("RGB", "RGBA") else im.mode
-        new_im = Image.new(canvas_mode, (new_w, h), background)
-        new_im.paste(im, (pad_left, 0))
+        canvas = Image.new(canvas_mode, (target_w, target_h), (0, 0, 0))
+        paste_x = (target_w - new_w) // 2
+        paste_y = (target_h - new_h) // 2
+        canvas.paste(resized_im, (paste_x, paste_y))
 
-        # Preserve transparency if source had an alpha channel
+        # Preserve alpha channel if necessary
         if im.mode == "RGBA":
-            new_im = new_im.convert("RGBA")
+            canvas = canvas.convert("RGBA")
 
-        new_im.save(dest)
+        canvas.save(dest)
 
 
 def main() -> None:
