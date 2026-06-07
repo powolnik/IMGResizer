@@ -113,7 +113,7 @@ def pad_portrait(src: Path, dest: Path) -> None:
         scale_factor = min(1, target_w / w, target_h / h)
         new_w = int(w * scale_factor)
         new_h = int(h * scale_factor)
-        resized_im = im.resize((new_w, new_h), Image.ANTIALIAS)
+        resized_im = im.resize((new_w, new_h), resample=Image.Resampling.LANCZOS)
 
         # Create a new canvas with target dimensions and black background
         canvas_mode = "RGB" if im.mode in ("RGB", "RGBA") else im.mode
