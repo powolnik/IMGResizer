@@ -100,8 +100,9 @@ def rename_file(
 
     if exists and force:
         new_path.unlink()  # replace existing file
-    path.rename(new_path)
-    print(f"RENAME        {path.name} → {new_path.name}")
+    import shutil
+    shutil.copy2(path, new_path)
+    print(f"COPY          {path.name} → {new_path.name}")
     return True
 
 
