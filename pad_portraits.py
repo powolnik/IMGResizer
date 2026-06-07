@@ -22,6 +22,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Iterable
+import argparse
 import shutil
 
 from PIL import Image
@@ -97,13 +98,28 @@ def pad_portrait(src: Path, ratio: float, dest: Path) -> None:
 
 def main() -> None:
     # ------------------------------------------------------------------
-    # Script now uses fixed locations:
-    #   • Input images:      <project-root>/img/
-    #   • Output collection: <project-root>/collection/
+    # Command-line interface
     # ------------------------------------------------------------------
-    if len(sys.argv) > 1:
-        print("Usage: python pad_portraits.py")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description=(
+            "Pad portrait photos with black sidebars so every file shares the "
+            "same outer landscape aspect-ratio."
+        )
+    )
+    parser.add_argument(
+        "-r",
+        "--ratio",
+        type=float,
+        help="Override the detected target aspect-ratio (implies --yes).",
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Run without the interactive confirmation prompt.",
+    )
+    args = parser.parse_args()
+    non_interactive = args.yes or args.ratio is not None
 
     project_root = Path(__file__).resolve().parent
     folder = project_root / "img"
@@ -123,8 +139,42 @@ def main() -> None:
     if not images:
         sys.exit("No supported images found in the specified folder.")
 
-    ratio = find_target_aspect(images)
-    print(f"Target aspect ratio: {ratio:.3f}")
+    detected_ratio = find_target_aspect(images)
+
+    # -------------------- analysis report -----------------------------
+    n_landscape = 0
+    for p in images:
+        with Image.open(p) as im:
+            if im.size[0] >= im.size[1]:
+                n_landscape += 1
+    n_portrait = len(images) - n_landscape
+
+    print(
+        "Analysis:\n"
+        f"  total files   : {len(images)}\n"
+        f"  landscape     : {n_landscape}\n"
+        f"  portrait      : {n_portrait}\n"
+        f"  target ratio  : {detected_ratio:.3f}"
+    )
+
+    # Decide which ratio to use
+    ratio = args.ratio if args.ratio is not None else detected_ratio
+
+    if not non_interactive:
+        custom = input(
+            f"\nEnter aspect ratio to use "
+            f"[press Enter to accept {ratio:.3f}]: "
+        ).strip()
+        if custom:
+            try:
+                ratio = float(custom)
+            except ValueError:
+                print("Invalid number – keeping previous value.")
+
+        confirm = input("Proceed with padding? [y/N] ").strip().lower()
+        if confirm != "y":
+            print("Aborted by user.")
+            return
 
     # Fresh output directory every run
     if out_dir.exists():
