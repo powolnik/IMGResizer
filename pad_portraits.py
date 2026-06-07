@@ -15,7 +15,7 @@ same outer aspect-ratio.  The script:
 
 Usage
 -----
-    python pad_portraits.py /path/to/images
+    python pad_portraits.py [folder_with_images]
 """
 from __future__ import annotations
 
@@ -85,11 +85,16 @@ def pad_portrait(src: Path, ratio: float, out_dir: Path) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        print("Usage: python pad_portraits.py <folder_with_images>")
+    # Accept zero or one positional argument.  No argument → current directory.
+    if len(sys.argv) > 2:
+        print("Usage: python pad_portraits.py [folder_with_images]")
         sys.exit(1)
 
-    folder = Path(sys.argv[1]).expanduser().resolve()
+    folder = (
+        Path(sys.argv[1]).expanduser().resolve()
+        if len(sys.argv) == 2
+        else Path.cwd()
+    )
     if not folder.is_dir():
         sys.exit(f"Error: {folder} is not a directory")
 
