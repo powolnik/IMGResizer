@@ -110,7 +110,14 @@ def main() -> None:
     out_dir = project_root / "collection"
 
     if not folder.is_dir():
-        sys.exit(f"Error: expected input folder {folder} to exist")
+        # Create the expected input directory on first run so users don’t have
+        # to create it manually, then instruct them to add images.
+        folder.mkdir(parents=True, exist_ok=True)
+        print(
+            f"Created empty input folder:\n  {folder}\n"
+            "Add images to that directory and run the script again."
+        )
+        return
 
     images = list(iter_images(folder))
     if not images:
