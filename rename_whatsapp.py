@@ -82,6 +82,11 @@ def rename_file(
     Returns True if a rename (or dry-run rename) was performed, False when the
     destination already exists and --force was not supplied.
     """
+    # Nothing to do if the source already has the desired name
+    if path.resolve() == new_path.resolve():
+        print(f"SKIP   (same) {path.name}")
+        return False
+
     exists = new_path.exists()
 
     # Skip when destination already exists unless --force is supplied
