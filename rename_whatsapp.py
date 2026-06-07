@@ -33,28 +33,26 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+from collections import defaultdict
 
-# Accept optional trailing junk (letters, spaces, symbols) after the seconds
-# so names like "...20.42.37mbj.jpeg" are still recognised.
-_PATTERN = re.compile(
-    r"^whatsapp image (\d{4})-(\d{2})-(\d{2}) at "
-    r"(\d{2})\.(\d{2})\.(\d{2})(?:\D.*)?$",
-    re.IGNORECASE,
-)
+# Capture any date in the form YYYY-MM-DD appearing in the filename
+# (works for both original WhatsApp names and those already normalised).
+_DATE_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
 
 
-def desired_name(stem: str, suffix: str) -> str | None:
+def extract_date(stem: str) -> str | None:
     """
-    Return the new filename (without path) or None if *stem* does not match the
-    WhatsApp pattern.
+    Return a date string 'YYYY-MM-DD' extracted from *stem* or None
+    if no valid date is found.
     """
-    m = _PATTERN.match(stem)
+    m = _DATE_RE.search(stem)
     if not m:
         return None
-
-    y, mo, d, hh, mm, ss = (int(x) for x in m.groups())
-    ts = datetime(y, mo, d, hh, mm, ss)
-    return ts.strftime("%Y-%m-%d_%H-%M-%S") + suffix.lower()
+    try:
+        dt = datetime(int(m[1]), int(m[2]), int(m[3]))
+    except ValueError:
+        return None
+    return dt.strftime("%Y-%m-%d")
 
 
 def _deduplicated_path(path: Path) -> Path:
@@ -126,24 +124,30 @@ def main() -> None:
     renamed = 0
     skipped = 0
 
+    # Progressive counter for each date
+    next_index: dict[str, int] = defaultdict(lambda: 1)
+
     for path in root.rglob("*"):
         if not path.is_file():
             continue
 
-        new_name = desired_name(path.stem, path.suffix)
-        if new_name is None:
+        date_str = extract_date(path.stem)
+        if date_str is None:
             skipped += 1
             continue
+
+        idx = next_index[date_str]
+        next_index[date_str] += 1
+
+        new_name = f"{date_str}_{idx:04d}{path.suffix.lower()}"
 
         if rename_file(
             path,
             path.with_name(new_name),
             dry_run=args.dry_run,
-            force=args.force,
+            force=True,  # always overwrite if the name already exists
         ):
             renamed += 1
-        else:
-            skipped += 1
 
     print(
         f"\nDone. Renamed: {renamed}, left unchanged (non-WhatsApp): {skipped}"
