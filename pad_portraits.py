@@ -178,11 +178,9 @@ def main() -> None:
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save every processed file to collection/ with a sequential name
-    #   0001-YYYY-MM-DD.ext, 0002-YYYY-MM-DD.ext, …
-    for idx, img_path in enumerate(sorted(images), start=1):
-        date_str = date_for_file(img_path)
-        dest_path = out_dir / f"{idx:04d}-{date_str}{img_path.suffix.lower()}"
+    # Save every processed file to collection/ with the same filename as original
+    for img_path in sorted(images):
+        dest_path = out_dir / img_path.name
         pad_portrait(img_path, dest_path)
 
     # ------------------------------------------------------------------
