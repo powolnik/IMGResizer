@@ -22,6 +22,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Iterable
+from collections import Counter
 import argparse
 import shutil
 
@@ -48,20 +49,33 @@ def iter_images(folder: Path) -> Iterable[Path]:
             yield p
 
 
-def find_target_aspect(img_paths: Iterable[Path]) -> float:
+def most_common_aspect(
+    img_paths: Iterable[Path], *, precision: int = 3
+) -> float:
     """
-    Return the aspect ratio (width / height) of the first landscape image.
+    Return the most frequently occurring landscape aspect ratio.
 
-    Raises RuntimeError if no landscape image is found.
+    Ratios are rounded to *precision* decimal places so that files with the
+    same shape but different resolutions collapse onto a single value
+    (e.g. 6000×4000 and 3000×2000 → 1.500).
+
+    Raises RuntimeError if no landscape images are found.
     """
+    counts: Counter[float] = Counter()
+
     for path in img_paths:
         with Image.open(path) as im:
             w, h = im.size
             if w >= h:  # landscape
-                return w / h
-    raise RuntimeError(
-        "No landscape images found – specify an aspect ratio manually."
-    )
+                counts[round(w / h, precision)] += 1
+
+    if not counts:
+        raise RuntimeError(
+            "No landscape images found – specify an aspect ratio manually."
+        )
+
+    # Counter.most_common(1) → [(ratio, count)]
+    return counts.most_common(1)[0][0]
 
 
 def pad_portrait(src: Path, ratio: float, dest: Path) -> None:
@@ -139,7 +153,7 @@ def main() -> None:
     if not images:
         sys.exit("No supported images found in the specified folder.")
 
-    detected_ratio = find_target_aspect(images)
+    detected_ratio = most_common_aspect(images)
 
     # -------------------- analysis report -----------------------------
     n_landscape = 0
