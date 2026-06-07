@@ -145,11 +145,17 @@ def main() -> None:
         action="store_true",
         help="Run without the interactive confirmation prompt.",
     )
+    parser.add_argument(
+        "--input",
+        type=str,
+        default=None,
+        help="Folder with images (default is <script_dir>/img)"
+    )
     args = parser.parse_args()
     non_interactive = args.yes or args.ratio is not None
 
     project_root = Path(__file__).resolve().parent
-    folder = project_root / "img"
+    folder = Path(args.input) if args.input else project_root / "img"
     out_dir = project_root / "collection"
 
     if not folder.is_dir():

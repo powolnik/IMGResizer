@@ -44,6 +44,7 @@ def main() -> None:
     parser.add_argument("--dry-rename", action="store_true", help="Dry-run for renaming")
     parser.add_argument("--force-rename", action="store_true", help="Overwrite on rename clashes")
     parser.add_argument("--ratio", type=float, help="Aspect-ratio to pass to pad_portraits.py")
+    parser.add_argument("--input", type=str, default=None, help="Folder with original images (default is img/)")
     args = parser.parse_args()
 
     # ---------------------------------------------------------------
@@ -58,12 +59,16 @@ def main() -> None:
     pad_cmd = [sys.executable, str(ROOT / "pad_portraits.py"), "--yes"]
     if args.ratio is not None:
         pad_cmd.extend(["-r", str(args.ratio)])
+    if args.input:
+        pad_cmd.extend(["--input", args.input])
     run(pad_cmd)
 
     # ---------------------------------------------------------------
     # 3. verify_collection.py
     # ---------------------------------------------------------------
     ver_cmd = [sys.executable, str(ROOT / "verify_collection.py")]
+    if args.input:
+        ver_cmd.extend(["--input", args.input])
     run(ver_cmd)
 
     print("\nPipeline completed successfully.")

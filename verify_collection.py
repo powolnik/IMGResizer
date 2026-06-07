@@ -34,8 +34,12 @@ def iter_images(folder: Path) -> Iterable[Path]:
 
 
 def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser(description="Verify collection against original images")
+    parser.add_argument("--input", type=str, default=None, help="Folder with original images (default is img/)")
+    args = parser.parse_args()
     root = Path(__file__).resolve().parent
-    src_dir = root / "img"
+    src_dir = Path(args.input) if args.input else root / "img"
     dst_dir = root / "collection"
 
     if not src_dir.is_dir():
