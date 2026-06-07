@@ -23,13 +23,34 @@ import sys
 from pathlib import Path
 from typing import Iterable
 from collections import Counter
+from datetime import datetime
 import argparse
 import shutil
+import re
 
 from PIL import Image
 
 
 SUPPORTED_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"}
+
+# ---------------------------------------------------------------------------
+# Naming helpers
+# ---------------------------------------------------------------------------
+# Capture a YYYY-MM-DD sequence inside a filename.
+_DATE_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
+
+
+def date_for_file(path: Path) -> str:
+    """
+    Return a date string 'YYYY-MM-DD' for *path*.
+
+    1. If the filename already contains a valid date sequence, use it.
+    2. Otherwise fall back to the file's modification timestamp.
+    """
+    m = _DATE_RE.search(path.stem)
+    if m:
+        return f"{m[1]}-{m[2]}-{m[3]}"
+    return datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
 
 
 def iter_images(folder: Path) -> Iterable[Path]:
@@ -195,8 +216,12 @@ def main() -> None:
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    for img_path in images:
-        dest_path = out_dir / img_path.name
+    # Save every processed file to collection/ with a sequential name
+    #   0001-YYYY-MM-DD.ext, 0002-YYYY-MM-DD.ext, …
+    for idx, img_path in enumerate(sorted(images), start=1):
+        date_str = date_for_file(img_path)
+        new_name = f"{idx:04d}-{date_str}{img_path.suffix.lower()}"
+        dest_path = out_dir / new_name
         pad_portrait(img_path, ratio, dest_path)
 
     print(f"Finished. Results saved to: {out_dir}")
